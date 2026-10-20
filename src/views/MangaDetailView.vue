@@ -11,15 +11,14 @@
         <h1>{{ manga.title }}</h1>
         <p class="muted">{{ manga.author }} · {{ manga.year ?? '—' }}</p>
         <ul class="facts">
-          <li><strong>Status:</strong> {{ manga.publishingStatus }}</li>
-          <li><strong>Chapters:</strong> {{ manga.chapters ?? '?' }}</li>
-          <li><strong>Volumes:</strong> {{ manga.volumes ?? '?' }}</li>
-          <li><strong>MAL score:</strong> {{ manga.score ?? '—' }}</li>
+          <li><strong>Pages:</strong> {{ manga.pages ?? '?' }}</li>
+          <li><strong>Editions:</strong> {{ manga.editions ?? '?' }}</li>
+          <li><strong>Open Library rating:</strong> {{ manga.communityRating ?? '—' }}</li>
         </ul>
-        <p v-if="manga.genres.length" class="genres">
+        <p v-if="manga.genres?.length" class="genres">
           <span v-for="g in manga.genres" :key="g" class="tag">{{ g }}</span>
         </p>
-        <p class="synopsis">{{ manga.synopsis }}</p>
+        <p class="synopsis">{{ manga.synopsis || 'No description available.' }}</p>
 
         <template v-if="libraryItem">
           <LibraryItemActions :item="libraryItem" />
@@ -46,12 +45,12 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getMangaById } from '@/services/jikan'
+import { getMangaById } from '@/services/openLibrary'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
 
 // `id` comes from the route param /manga/:id (see router props)
 const props = defineProps({
-  id: { type: Number, required: true }
+  id: { type: String, required: true }
 })
 
 const router = useRouter()

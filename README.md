@@ -10,15 +10,16 @@ Built for the UI/UX + Vue.js project: Vue 3, Vue Router, Vuex, an external API a
 
 ## API used
 
-**[Jikan API v4](https://docs.api.jikan.moe/)** — an unofficial, free REST API for MyAnimeList data.
+**[Open Library API](https://openlibrary.org/developers/api)** — a free, open books API run by the Internet Archive (manga are searched as books with the `manga` subject).
 
 - No API key required
 - Endpoints used:
-  - `GET https://api.jikan.moe/v4/manga?q={query}&page={n}` — search
-  - `GET https://api.jikan.moe/v4/manga/{id}/full` — details
-- Rate limit: ~3 requests/second, 60/minute
+  - `GET https://openlibrary.org/search.json?q={query}&subject=manga&page={n}` — search
+  - `GET https://openlibrary.org/works/{id}.json` — details (description, subjects)
+  - `GET https://covers.openlibrary.org/b/id/{cover_id}-M.jpg` — covers
+- Requests time out after 10 seconds with an error message instead of hanging
 
-Data displayed: title, author(s), year, cover, synopsis, chapters, volumes, genres, score.
+Data displayed: title, author(s), year, cover, description, subjects, page count, editions, community rating.
 
 ## Installation
 
@@ -48,7 +49,7 @@ src/
 ├── App.vue                  # Layout: header, <RouterView>, toasts
 ├── assets/main.css          # Theme tokens (light/dark) + base styles
 ├── router/index.js          # Routes: /, /library, /favorites, /manga/:id
-├── services/jikan.js        # API calls + data normalization
+├── services/openLibrary.js  # API calls + data normalization
 ├── store/
 │   ├── index.js             # Vuex: state, getters, mutations, actions
 │   └── persist.js           # localStorage load/save plugin
@@ -72,7 +73,7 @@ src/
 ## Features
 
 ### Core
-- [x] Search manga via the Jikan API, results displayed dynamically
+- [x] Search manga via the Open Library API, results displayed dynamically
 - [x] Add to library, view collection, delete item
 - [x] Mark as read / to read
 - [x] Favorites (`favorite` property, `TOGGLE_FAVORITE` mutation, `favorites` getter, `/favorites` page)
