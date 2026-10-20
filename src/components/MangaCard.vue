@@ -1,7 +1,7 @@
 <template>
   <article class="card">
     <RouterLink :to="{ name: 'manga-detail', params: { id: manga.id } }" class="cover-link">
-      <img :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" loading="lazy" />
+      <CoverImage :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" loading="lazy" />
     </RouterLink>
     <div class="body">
       <h3 class="title" :title="manga.title">{{ manga.title }}</h3>
@@ -16,6 +16,8 @@
 </template>
 
 <script setup>
+import CoverImage from './CoverImage.vue'
+
 defineProps({
   manga: { type: Object, required: true }
 })
