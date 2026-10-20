@@ -57,6 +57,7 @@ src/
 │   ├── AppHeader.vue        # Nav + dark/light toggle
 │   ├── SearchBar.vue
 │   ├── MangaCard.vue        # Cover/title/author/year + action slot
+│   ├── CoverImage.vue       # Cover <img> with placeholder fallback
 │   ├── LibraryItemActions.vue  # Read, favorite, rating, delete
 │   ├── LibraryStats.vue
 │   ├── RatingStars.vue

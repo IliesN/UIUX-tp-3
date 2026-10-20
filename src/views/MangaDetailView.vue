@@ -6,7 +6,7 @@
     <p v-else-if="error" class="muted" role="alert">⚠️ {{ error }}</p>
 
     <article v-else-if="manga" class="detail">
-      <img :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" />
+      <CoverImage :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" />
       <div class="info">
         <h1>{{ manga.title }}</h1>
         <p class="muted">{{ manga.author }} · {{ manga.year ?? '—' }}</p>
@@ -47,6 +47,7 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { getMangaById } from '@/services/openLibrary'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
+import CoverImage from '@/components/CoverImage.vue'
 
 // `id` comes from the route param /manga/:id (see router props)
 const props = defineProps({
