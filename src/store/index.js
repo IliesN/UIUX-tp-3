@@ -1,5 +1,5 @@
 import { createStore } from 'vuex'
-import { searchManga } from '@/services/jikan'
+import { searchManga } from '@/services/openLibrary'
 import { loadLibrary, persistPlugin } from './persist'
 
 const findItem = (state, id) => state.library.find((m) => m.id === id)

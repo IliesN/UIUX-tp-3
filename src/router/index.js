@@ -9,7 +9,7 @@ const routes = [
     path: '/manga/:id',
     name: 'manga-detail',
     component: () => import('@/views/MangaDetailView.vue'),
-    props: (route) => ({ id: Number(route.params.id) })
+    props: true
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') }
 ]
