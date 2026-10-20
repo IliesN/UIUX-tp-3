@@ -53,5 +53,5 @@ Search  →  Results  →  Add  →  Library
 
 - [x] Persona
 - [x] Problem statement
-- [ ] 2–3 low-fidelity wireframes → `docs/wireframes/` (Search, Library, Detail)
-- [ ] Clickable Figma prototype → link: _TODO_
+- [x] Low-fidelity wireframes → [`docs/wireframes/`](wireframes/) (Search, Library, Favorites, Detail)
+- [x] Clickable Figma prototype → [Mangashelf Prototype](https://www.figma.com/design/v24GmVeO3An48HHtHM6oHO/Mangashelf-Prototype)

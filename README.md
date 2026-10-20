@@ -6,7 +6,7 @@ Built for the UI/UX + Vue.js project: Vue 3, Vue Router, Vuex, an external API a
 
 - **Persona & problem statement:** [docs/persona.md](docs/persona.md)
 - **Wireframes:** [docs/wireframes/](docs/wireframes/)
-- **Figma prototype:** _TODO: add link_
+- **Figma prototype:** [Mangashelf Prototype](https://www.figma.com/design/v24GmVeO3An48HHtHM6oHO/Mangashelf-Prototype)
 
 ## API used
 
@@ -26,8 +26,8 @@ Data displayed: title, author(s), year, cover, description, subjects, page count
 Requirements: [Node.js](https://nodejs.org/) 18+
 
 ```bash
-git clone <repo-url>
-cd mangashelf
+git clone https://github.com/IliesN/UIUX-tp-3.git
+cd UIUX-tp-3
 npm install
 npm run dev
 ```
@@ -92,4 +92,5 @@ src/
 
 ## Team
 
-- _Names here_
+- Valentin GONCALVES
+- Ilies NASR
