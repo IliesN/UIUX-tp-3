@@ -5,7 +5,7 @@
 
     <p v-if="search.error" class="error" role="alert">
       ⚠️ {{ search.error }}
-      <button class="btn" @click="onSearch(search.query)">Retry</button>
+      <button class="btn" @click="retry">Retry</button>
     </p>
 
     <p v-if="search.loading && !search.results.length" class="muted" aria-live="polite">Searching…</p>
@@ -49,6 +49,9 @@ const search = computed(() => store.state.search)
 const isInLibrary = (id) => store.getters.isInLibrary(id)
 
 const onSearch = (query) => store.dispatch('search', { query, page: 1 })
+
+// If "Load more" failed, results are still there: retry the next page, not the whole search
+const retry = () => (search.value.results.length ? store.dispatch('loadMore') : onSearch(search.value.query))
 </script>
 
 <style scoped>

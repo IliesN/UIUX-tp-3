@@ -76,14 +76,24 @@ export default createStore({
     },
 
     // --- Search ---
+    SEARCH_START(state, { query, page }) {
+      // Save the query right away, so "Retry" re-runs the search that was typed
+      state.search.query = query
+      state.search.loading = true
+      state.search.error = null
+      // A new search clears the previous results instead of showing them next to it
+      if (page === 1) {
+        state.search.results = []
+        state.search.hasNextPage = false
+      }
+    },
     SEARCH_LOADING(state, loading) {
       state.search.loading = loading
     },
     SEARCH_ERROR(state, error) {
       state.search.error = error
     },
-    SEARCH_RESULTS(state, { query, results, page, hasNextPage }) {
-      state.search.query = query
+    SEARCH_RESULTS(state, { results, page, hasNextPage }) {
       state.search.page = page
       state.search.hasNextPage = hasNextPage
       state.search.results = page === 1 ? results : [...state.search.results, ...results]
@@ -99,17 +109,19 @@ export default createStore({
   },
 
   actions: {
-    async search({ commit }, { query, page = 1 }) {
+    async search({ commit, state }, { query, page = 1 }) {
       if (!query.trim()) return
-      commit('SEARCH_LOADING', true)
-      commit('SEARCH_ERROR', null)
+      commit('SEARCH_START', { query, page })
       try {
         const { results, hasNextPage } = await searchManga(query, page)
-        commit('SEARCH_RESULTS', { query, results, page, hasNextPage })
+        // Ignore the answer if the user started another search in the meantime
+        if (state.search.query !== query) return
+        commit('SEARCH_RESULTS', { results, page, hasNextPage })
       } catch (err) {
+        if (state.search.query !== query) return
         commit('SEARCH_ERROR', err.message || 'Something went wrong')
       } finally {
-        commit('SEARCH_LOADING', false)
+        if (state.search.query === query) commit('SEARCH_LOADING', false)
       }
     },
     loadMore({ dispatch, state }) {
