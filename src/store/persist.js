@@ -1,4 +1,5 @@
 // localStorage persistence for the Vuex library (Exercise 4).
+// Key kept from the app's former name (MangaShelf) so saved libraries are not lost
 const STORAGE_KEY = 'mangashelf:library'
 
 // Called once when the store is created.

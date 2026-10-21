@@ -1,7 +1,11 @@
 <template>
   <header class="header">
     <div class="header-inner">
-      <RouterLink to="/" class="logo">📚 MangaShelf</RouterLink>
+      <RouterLink to="/" class="logo">
+        <!-- 読 (yomu, "to read") drawn behind the name -->
+        <span class="kanji" aria-hidden="true">読</span>
+        <span class="name">yomu</span>
+      </RouterLink>
       <nav class="nav">
         <RouterLink to="/">Search</RouterLink>
         <RouterLink to="/library">Library ({{ libraryCount }})</RouterLink>
@@ -37,8 +41,27 @@ const libraryCount = computed(() => store.getters.libraryItems.length)
   flex-wrap: wrap;
 }
 .logo {
+  position: relative;
+  isolation: isolate; /* keeps the kanji (z-index -1) above the header background */
+  display: inline-grid;
+  place-items: center;
   font-weight: 700;
+  font-size: 1.25rem;
   text-decoration: none;
+}
+.kanji {
+  position: absolute;
+  z-index: -1;
+  font-size: 2.4em;
+  line-height: 1;
+  color: #fff;
+  -webkit-text-stroke: 0.35px #000; /* very thin black outline */
+  opacity: 0.7;
+  pointer-events: none;
+}
+.name {
+  position: relative;
+  font-size: 1.2em; /* the kanji keeps its size: it depends on .logo, not on .name */
 }
 .nav {
   display: flex;

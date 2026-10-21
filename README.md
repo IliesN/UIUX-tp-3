@@ -1,4 +1,4 @@
-# 📚 MangaShelf
+# 読 yomu
 
 A Vue.js app to **search manga, build a personal library, and track what you've read and what's left to read**.
 
@@ -78,7 +78,7 @@ src/
 │   ├── index.js             # Vuex: state, getters, mutations, actions
 │   └── persist.js           # localStorage load/save plugin
 ├── components/
-│   ├── AppHeader.vue        # Logo + navigation
+│   ├── AppHeader.vue        # Logo (読 behind "yomu") + navigation
 │   ├── SearchBar.vue
 │   ├── MangaCard.vue        # Cover/title/author/year + action slot
 │   ├── PlatformLinks.vue    # "Read it on" list of a volume (icon, languages, link)
