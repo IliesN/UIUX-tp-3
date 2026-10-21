@@ -18,14 +18,11 @@
     />
 
     <div v-if="search.results.length" class="grid">
-      <MangaCard v-for="manga in search.results" :key="manga.id" :manga="manga">
-        <button
-          class="btn btn-primary"
-          :disabled="isInLibrary(manga.id)"
-          @click="store.dispatch('addToLibrary', manga)"
-        >
-          {{ isInLibrary(manga.id) ? '✓ In library' : '+ Add' }}
-        </button>
+      <!-- One card per series, its volumes are on the series page -->
+      <MangaCard v-for="series in search.results" :key="series.id" :manga="series" :to="seriesRoute(series)">
+        <RouterLink class="btn btn-primary" :to="seriesRoute(series)">
+          {{ series.volumeCount ? `${series.volumeCount} volumes` : 'See volumes' }} →
+        </RouterLink>
       </MangaCard>
     </div>
 
@@ -46,7 +43,7 @@ import EmptyState from '@/components/EmptyState.vue'
 
 const store = useStore()
 const search = computed(() => store.state.search)
-const isInLibrary = (id) => store.getters.isInLibrary(id)
+const seriesRoute = (series) => ({ name: 'series', params: { id: series.id } })
 
 const onSearch = (query) => store.dispatch('search', { query, page: 1 })
 
@@ -60,6 +57,9 @@ const retry = () => (search.value.results.length ? store.dispatch('loadMore') : 
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.grid .btn {
+  text-decoration: none;
 }
 .load-more {
   display: flex;
