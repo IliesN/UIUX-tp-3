@@ -17,7 +17,7 @@ Two free APIs, no API key required. Requests time out after 10 seconds with an e
 - `POST https://graphql.anilist.co` — `Page.media(search, type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false)`
   - `format: MANGA` + `countryOfOrigin: "JP"`: only Japanese manga (no novels, one-shots, manhwa, manhua, adult titles)
 - `POST https://graphql.anilist.co` — `Media(id)` for a series page, with its `externalLinks` of type `STREAMING` (official digital platforms: MANGA Plus, VIZ, K MANGA…)
-- `POST https://graphql.anilist.co` — `Page.media(sort: POPULARITY_DESC)` for home page suggestions, and a random title among the 500 most popular for the search bar placeholder
+- `POST https://graphql.anilist.co` — `Page.media(sort: POPULARITY_DESC)` × 2 pages of 50 for home page suggestions, and a random title among the 500 most popular for the search bar placeholder
 
 Only **main series** are kept in search results ([src/services/anilist.js](src/services/anilist.js)). A result is removed when:
 
@@ -82,8 +82,7 @@ src/
 │   ├── SearchBar.vue
 │   ├── MangaCard.vue        # Cover/title/author/year + action slot
 │   ├── PlatformLinks.vue    # "Read it on" list of a volume (icon, languages, link)
-│   ├── SeriesProgress.vue   # Read / owned / total volumes bar of a series
-│   ├── VolumeCarousel.vue   # Sliding row of volumes (home page: Continue reading, Suggested for you)
+│   ├── BookShelf.vue        # Shelf of volume spines: one sliding row (home page) or several rows (library)
 │   ├── CoverImage.vue       # Cover <img> with placeholder fallback
 │   ├── LibraryItemActions.vue  # Read, favorite, rating, delete
 │   ├── LibraryStats.vue
@@ -92,7 +91,7 @@ src/
 │   └── ToastContainer.vue
 └── views/
     ├── SearchView.vue       # / — search + suggestions
-    ├── LibraryView.vue      # /library — by series or by volume; /library?series=<id> opens one series
+    ├── LibraryView.vue      # /library — bookshelf of the library volumes, filters and sorting
     ├── FavoritesView.vue    # /favorites
     ├── SeriesView.vue       # /series/:id — all volumes of a series
     ├── MangaDetailView.vue  # /manga/:id — one volume
@@ -103,24 +102,28 @@ src/
 
 ### Core
 - [x] Search manga series (AniList), one result per main series, volumes listed on the series page (MangaDex)
-- [x] Add to library (one volume, or every volume of a series at once), view collection, delete item (one volume, or a whole series from My library)
-- [x] Library displayed **by series** (one card per series, click to see its volumes) or **by volume** (Series / Volumes toggle, remembered on the browser)
+- [x] Add to library (one volume, or every volume of a series at once), view collection, delete item
+- [x] Library displayed as a **bookcase**: volumes seen from their spine, as many per shelf as fit the screen, then the next shelf (each row keeps room for one pulled-out book, so hovering never moves a book to another row). Green label = read, click = the volume page with its actions
 - [x] Mark as read / to read, one volume at a time or for a whole series at once ("I've read up to Vol. N" on the series page)
 - [x] Favorites (`favorite` property, `TOGGLE_FAVORITE` mutation, `favorites` getter, `/favorites` page)
 - [x] Vuex store with state, getters, mutations, actions
 - [x] Library saved to and loaded from localStorage
 
 ### Advanced (Part 6)
-- [x] Filters & sorting (status, favorites, title/year/date/rating, search inside library; Vol. 2 sorts before Vol. 10; "Series" sort in the volume view groups volumes by series, in reading order)
+- [x] Filters & sorting (status, favorites, search inside library; sort by series — default, volumes grouped by series in reading order — date added, title, year or rating)
+- [x] Bookshop-style dividers between groups of books: a block with the first letter (bold, uppercase) when sorted by series or title — `#` for titles not starting with A–Z — and with the year when sorted by year. No dividers for the other sorts. A divider never ends a shelf: it always stays with its first book
 - [x] Series page (`/series/:id`) and volume details page (`/manga/:id`) with route params
 - [x] "Read it on": under the cover of a volume page, the official digital platforms with their icon and languages. The link opens the volume's first chapter when MangaDex knows its official URL on that platform (mostly MANGA Plus, French then English), otherwise the series page on the platform
 - [x] Rating system (1–5 stars, persisted)
 - [x] Personal notes (persisted)
 - [x] Library statistics
-- [x] Series progress bar measured against the **whole series**, not the library: "2/72 read · 3 owned", read volumes in green, owned ones lighter. Totals come from AniList for finished series (one request for all) and from MangaDex for running ones
-- [x] Home page with two sliding rows (arrows or swipe):
+- [x] Home page with two **bookshelves**, volumes seen from their spine:
   - **Continue reading**: the next volume to read in each of your series (an unread volume you own, or the next one you don't have yet)
-  - **Suggested for you**: Vol. 1 of 10 popular series that are not in your library
+  - **Suggested for you**: Vol. 1 of 50 series picked at random among the 100 most popular, minus the ones in your library
+  - One book is pulled out at a time, none at first. Hovering a book pulls it out (put back when the mouse leaves the shelf). The arrows ‹ › start from the first volume (or the hovered one) and move to the previous / next volume, keeping it in view; ← → keys work on a focused book
+  - Hovering near the left or right edge of a shelf scrolls it (faster closer to the edge); swipe / trackpad work too. Covers load lazily as the shelf scrolls
+  - No API provides real spines: each spine is drawn from a vertical strip of the volume's cover, with the volume number at the bottom. All books have the same size
+  - Pulled out: the book shows its full cover, with the series title where the number was. Click: the series page
 - [x] Search bar placeholder "e.g. <title>" with a random manga title from the API
 - [x] Better API experience (loading, error, no results, load more, no duplicates)
 - [x] UI/UX: responsive, empty states, delete confirmation, toasts

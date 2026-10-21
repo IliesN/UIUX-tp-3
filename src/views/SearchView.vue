@@ -5,12 +5,12 @@
 
     <!-- Home page (no search yet) -->
     <template v-if="!search.query">
-      <VolumeCarousel
+      <BookShelf
         title="Continue reading"
         hint="The next volume to read in each of your series."
         :fetch-volumes="getContinueReading"
       />
-      <VolumeCarousel
+      <BookShelf
         title="Suggested for you"
         hint="Popular series that are not in your library yet."
         :fetch-volumes="getSuggestedSeries"
@@ -54,7 +54,7 @@ import { useStore } from 'vuex'
 import SearchBar from '@/components/SearchBar.vue'
 import MangaCard from '@/components/MangaCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import VolumeCarousel from '@/components/VolumeCarousel.vue'
+import BookShelf from '@/components/BookShelf.vue'
 import { getContinueReading, getRandomTitle, getSuggestedSeries } from '@/services/manga'
 
 const store = useStore()

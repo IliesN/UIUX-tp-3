@@ -60,9 +60,6 @@ export default createStore({
     REMOVE_ITEM(state, id) {
       state.library = state.library.filter((m) => m.id !== id)
     },
-    REMOVE_SERIES(state, seriesId) {
-      state.library = state.library.filter((m) => m.seriesId !== seriesId)
-    },
     TOGGLE_READ(state, id) {
       const item = findItem(state, id)
       if (item) item.read = !item.read
@@ -172,12 +169,6 @@ export default createStore({
       const item = getters.getItemById(id)
       commit('REMOVE_ITEM', id)
       if (item) dispatch('notify', { message: `Removed "${item.title}"`, type: 'warning' })
-    },
-    // Every volume of a series at once
-    removeSeriesFromLibrary({ commit, state, dispatch }, { seriesId, title }) {
-      const count = state.library.filter((m) => m.seriesId === seriesId).length
-      commit('REMOVE_SERIES', seriesId)
-      dispatch('notify', { message: `Removed "${title}" (${count} volume${count > 1 ? 's' : ''})`, type: 'warning' })
     },
     toggleRead({ commit }, id) {
       commit('TOGGLE_READ', id)

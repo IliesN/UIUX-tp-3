@@ -1,5 +1,5 @@
 // Combines both APIs: AniList for the series, MangaDex for its volumes and their covers.
-import { getPopularSeries, getSeriesInfo, getVolumeCounts } from './anilist'
+import { getPopularSeries, getSeriesInfo } from './anilist'
 import { getVolumeCovers, getVolumeFirstChapter } from './mangadex'
 
 export { searchSeries, getRandomTitle } from './anilist'
@@ -74,45 +74,6 @@ export async function getVolume(id) {
   return { ...found, series }
 }
 
-// Total number of regular volumes of each series, for the library progress bars.
-// Finished series: AniList knows it (one request for all of them).
-// Ongoing series: count the volumes MangaDex knows, one series at a time (rate limit).
-// `onTotal(seriesId, total)` is called as soon as each total is known.
-const volumeTotals = new Map()
-
-export async function loadVolumeTotals(seriesIds, onTotal) {
-  const missing = seriesIds.filter((id) => {
-    if (!volumeTotals.has(id)) return true
-    onTotal(id, volumeTotals.get(id))
-    return false
-  })
-  if (!missing.length) return
-
-  const found = (id, total) => {
-    volumeTotals.set(id, total)
-    onTotal(id, total)
-  }
-  let counts = new Map()
-  try {
-    counts = await getVolumeCounts(missing)
-  } catch (err) {
-    console.warn('Could not load volume counts from AniList', err)
-  }
-  const unknown = []
-  for (const id of missing) {
-    if (counts.get(id)?.finished && counts.get(id).volumes) found(id, counts.get(id).volumes)
-    else unknown.push(id)
-  }
-  for (const id of unknown) {
-    try {
-      const series = await getSeries(id)
-      if (series.volumes.length) found(id, series.volumes.length)
-    } catch (err) {
-      console.warn('Could not load the volumes of', id, err)
-    }
-  }
-}
-
 // Same order as the platform links of a series (see anilist.js)
 const PREFERRED_CHAPTER_LANGUAGES = ['fr', 'en']
 const hostOf = (url) => {
@@ -183,7 +144,7 @@ export async function getContinueReading(library, count = 10) {
 }
 
 // "Suggested for you": Vol. 1 of popular series that are not in the library at all.
-export async function getSuggestedSeries(library, count = 10) {
+export async function getSuggestedSeries(library, count = 50) {
   const followed = new Set(followedSeries(library))
   const popular = await getPopularSeries()
   return shuffle(popular.filter((s) => !followed.has(s.id)))

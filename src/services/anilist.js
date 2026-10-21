@@ -33,8 +33,8 @@ const SEARCH_QUERY = `
 `
 
 const POPULAR_QUERY = `
-  query ($perPage: Int) {
-    Page(perPage: $perPage) {
+  query ($page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
       media(type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false, sort: [POPULARITY_DESC]) {
         ${SERIES_FIELDS}
       }
@@ -49,15 +49,6 @@ const TITLES_QUERY = `
       media(type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false, sort: [POPULARITY_DESC]) {
         title { romaji english }
       }
-    }
-  }
-`
-
-// Volume count of several series at once (library progress bars)
-const COUNTS_QUERY = `
-  query ($ids: [Int], $perPage: Int) {
-    Page(perPage: $perPage) {
-      media(id_in: $ids, type: MANGA) { id volumes status }
     }
   }
 `
@@ -196,9 +187,18 @@ export async function searchSeries(query, page = 1) {
 }
 
 // The most popular main series, used for suggestions
-export async function getPopularSeries(count = 40) {
-  const data = await graphql(POPULAR_QUERY, { perPage: count })
-  return data.Page.media.filter((m) => !hasMangaParent(m)).map(normalizeSeries)
+// AniList pages hold 50 entries at most: several pages are loaded in parallel
+export async function getPopularSeries(count = 100) {
+  const PER_PAGE = 50
+  const pages = await Promise.all(
+    Array.from({ length: Math.ceil(count / PER_PAGE) }, (_, i) =>
+      graphql(POPULAR_QUERY, { page: i + 1, perPage: PER_PAGE })
+    )
+  )
+  return pages
+    .flatMap((data) => data.Page.media)
+    .filter((m) => !hasMangaParent(m))
+    .map(normalizeSeries)
 }
 
 // A random title among the 500 most popular manga ("e.g. Vinland Saga" in the search bar)
@@ -208,20 +208,6 @@ export async function getRandomTitle() {
   const data = await graphql(TITLES_QUERY, { page, perPage: PER_PAGE })
   const titles = data.Page.media.map((m) => m.title.english || m.title.romaji)
   return titles[Math.floor(Math.random() * titles.length)]
-}
-
-// Map seriesId -> { volumes, finished }. A running series' count is often missing or outdated.
-export async function getVolumeCounts(ids) {
-  const counts = new Map()
-  const PER_PAGE = 50 // AniList maximum
-  for (let i = 0; i < ids.length; i += PER_PAGE) {
-    const chunk = ids.slice(i, i + PER_PAGE)
-    const data = await graphql(COUNTS_QUERY, { ids: chunk.map(Number), perPage: PER_PAGE })
-    for (const m of data.Page.media) {
-      counts.set(String(m.id), { volumes: m.volumes, finished: m.status === 'FINISHED' })
-    }
-  }
-  return counts
 }
 
 export async function getSeriesInfo(id) {
