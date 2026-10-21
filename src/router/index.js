@@ -11,6 +11,12 @@ const routes = [
     component: () => import('@/views/MangaDetailView.vue'),
     props: true
   },
+  {
+    path: '/series/:id',
+    name: 'series',
+    component: () => import('@/views/SeriesView.vue'),
+    props: true
+  },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') }
 ]
 

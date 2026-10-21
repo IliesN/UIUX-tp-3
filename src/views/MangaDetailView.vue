@@ -11,14 +11,16 @@
         <h1>{{ manga.title }}</h1>
         <p class="muted">{{ manga.author }} · {{ manga.year ?? '—' }}</p>
         <ul class="facts">
-          <li><strong>Pages:</strong> {{ manga.pages ?? '?' }}</li>
-          <li><strong>Editions:</strong> {{ manga.editions ?? '?' }}</li>
-          <li><strong>Open Library rating:</strong> {{ manga.communityRating ?? '—' }}</li>
+          <li><strong>Volume:</strong> {{ manga.volume ?? '?' }}</li>
+          <li v-if="manga.seriesId">
+            <strong>Series:</strong>&nbsp;<RouterLink :to="{ name: 'series', params: { id: manga.seriesId } }">{{ manga.seriesTitle }}</RouterLink>
+          </li>
+          <li v-if="manga.series?.score"><strong>AniList score:</strong> {{ manga.series.score }}/10</li>
         </ul>
-        <p v-if="manga.genres?.length" class="genres">
-          <span v-for="g in manga.genres" :key="g" class="tag">{{ g }}</span>
+        <p v-if="manga.series?.genres.length" class="genres">
+          <span v-for="g in manga.series.genres" :key="g" class="tag">{{ g }}</span>
         </p>
-        <p class="synopsis">{{ manga.synopsis || 'No description available.' }}</p>
+        <p class="synopsis">{{ manga.series?.synopsis || 'No description available.' }}</p>
 
         <template v-if="libraryItem">
           <LibraryItemActions :item="libraryItem" />
@@ -45,11 +47,11 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getMangaById } from '@/services/openLibrary'
+import { getVolume } from '@/services/manga'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
 import CoverImage from '@/components/CoverImage.vue'
 
-// `id` comes from the route param /manga/:id (see router props)
+// `id` comes from the route param /manga/:id, a volume id like "30011-12" (see router props)
 const props = defineProps({
   id: { type: String, required: true }
 })
@@ -68,7 +70,7 @@ watch(
     loading.value = true
     error.value = null
     try {
-      manga.value = await getMangaById(id)
+      manga.value = await getVolume(id)
     } catch (err) {
       // Offline / API down: fall back to the copy saved in the library
       manga.value = store.getters.getItemById(id) ?? null

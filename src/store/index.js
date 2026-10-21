@@ -1,5 +1,5 @@
 import { createStore } from 'vuex'
-import { searchManga } from '@/services/openLibrary'
+import { searchSeries } from '@/services/manga'
 import { loadLibrary, persistPlugin } from './persist'
 
 const findItem = (state, id) => state.library.find((m) => m.id === id)
@@ -46,8 +46,10 @@ export default createStore({
   mutations: {
     // --- Library ---
     ADD_ITEM(state, manga) {
+      // The detail page passes the volume with its whole series: don't save that in localStorage
+      const { series, ...volume } = manga
       state.library.push({
-        ...manga,
+        ...volume,
         read: false,
         favorite: false,
         rating: 0,
@@ -96,7 +98,9 @@ export default createStore({
     SEARCH_RESULTS(state, { results, page, hasNextPage }) {
       state.search.page = page
       state.search.hasNextPage = hasNextPage
-      state.search.results = page === 1 ? results : [...state.search.results, ...results]
+      // Skip series already shown (pages can overlap)
+      const known = new Set(state.search.results.map((s) => s.id))
+      state.search.results = page === 1 ? results : [...state.search.results, ...results.filter((s) => !known.has(s.id))]
     },
 
     // --- Toasts ---
@@ -113,7 +117,7 @@ export default createStore({
       if (!query.trim()) return
       commit('SEARCH_START', { query, page })
       try {
-        const { results, hasNextPage } = await searchManga(query, page)
+        const { results, hasNextPage } = await searchSeries(query, page)
         // Ignore the answer if the user started another search in the meantime
         if (state.search.query !== query) return
         commit('SEARCH_RESULTS', { results, page, hasNextPage })
@@ -135,6 +139,14 @@ export default createStore({
       }
       commit('ADD_ITEM', manga)
       dispatch('notify', { message: `Added "${manga.title}" to your library` })
+    },
+    addSeriesToLibrary({ commit, getters, dispatch }, { title, volumes }) {
+      const missing = volumes.filter((v) => !getters.isInLibrary(v.id))
+      missing.forEach((v) => commit('ADD_ITEM', v))
+      dispatch('notify', {
+        message: missing.length ? `Added ${missing.length} volume(s) of "${title}"` : `All of "${title}" is already in your library`,
+        type: missing.length ? 'success' : 'info'
+      })
     },
     removeFromLibrary({ commit, getters, dispatch }, id) {
       const item = getters.getItemById(id)

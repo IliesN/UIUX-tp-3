@@ -59,7 +59,7 @@ const sortBy = ref('addedAt')
 
 const sorters = {
   addedAt: (a, b) => b.addedAt - a.addedAt,
-  title: (a, b) => a.title.localeCompare(b.title),
+  title: (a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }), // Vol. 2 before Vol. 10
   year: (a, b) => (b.year ?? 0) - (a.year ?? 0),
   rating: (a, b) => b.rating - a.rating
 }

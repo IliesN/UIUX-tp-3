@@ -8,18 +8,34 @@ Built for the UI/UX + Vue.js project: Vue 3, Vue Router, Vuex, an external API a
 - **Wireframes:** [docs/wireframes/](docs/wireframes/)
 - **Figma prototype:** [Mangashelf Prototype](https://www.figma.com/design/v24GmVeO3An48HHtHM6oHO/Mangashelf-Prototype)
 
-## API used
+## APIs used
 
-**[Open Library API](https://openlibrary.org/developers/api)** — a free, open books API run by the Internet Archive (manga are searched as books with the `manga` subject).
+Two free APIs, no API key required. Requests time out after 10 seconds with an error message instead of hanging.
 
-- No API key required
-- Endpoints used:
-  - `GET https://openlibrary.org/search.json?q={query}&subject=manga&page={n}` — search
-  - `GET https://openlibrary.org/works/{id}.json` — details (description, subjects)
-  - `GET https://covers.openlibrary.org/b/id/{cover_id}-M.jpg` — covers
-- Requests time out after 10 seconds with an error message instead of hanging
+**[AniList GraphQL API](https://docs.anilist.co)** — one entry per series, used for search and series info.
 
-Data displayed: title, author(s), year, cover, description, subjects, page count, editions, community rating.
+- `POST https://graphql.anilist.co` — `Page.media(search, type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false)`
+  - `format: MANGA` + `countryOfOrigin: "JP"`: only Japanese manga (no novels, one-shots, manhwa, manhua, adult titles)
+- `POST https://graphql.anilist.co` — `Media(id)` for a series page
+
+Only **main series** are kept in search results ([src/services/anilist.js](src/services/anilist.js)). A result is removed when:
+
+- it has a `PARENT` relation to another manga (spin-offs, side stories), or its title contains "Gaiden" ("side story");
+- it is derived from a more popular result: linked to it by any relation other than `SEQUEL` / `PREQUEL`, or titled like it followed by `:` / a number (e.g. "Attack on Titan: Lost Girls");
+- its popularity is below 2% of the most popular result (homonyms like "Boku no One Piece" next to One Piece).
+
+Sequels stay, as they are main series too (Boruto, Dragon Ball Super).
+
+**[MangaDex API](https://api.mangadex.org/docs)** — the list of volumes of a series and their covers.
+
+- `GET https://api.mangadex.org/manga?title={title}` — find the series (matched with its AniList id, `links.al`)
+- `GET https://api.mangadex.org/cover?manga[]={id}&limit=100&offset={n}` — one cover per volume
+- `GET https://uploads.mangadex.org/covers/{id}/{file}.256.jpg` — cover images (Japanese edition preferred)
+- If MangaDex has nothing, the volume list falls back to AniList's volume count, with the series cover
+
+A volume is identified by `<AniList series id>-<volume number>` (e.g. `30011-12` = Naruto, Vol. 12).
+
+Data displayed: title, author(s), year, status, cover per volume, synopsis, genres, AniList score, volume count.
 
 ## Installation
 
@@ -48,8 +64,12 @@ src/
 ├── main.js                  # App entry: registers router + store
 ├── App.vue                  # Layout: header, <RouterView>, toasts
 ├── assets/main.css          # Theme tokens (light/dark) + base styles
-├── router/index.js          # Routes: /, /library, /favorites, /manga/:id
-├── services/openLibrary.js  # API calls + data normalization
+├── router/index.js          # Routes: /, /library, /favorites, /series/:id, /manga/:id
+├── services/
+│   ├── http.js              # fetch + timeout + error messages
+│   ├── anilist.js           # Series search/info + main-series filter (AniList GraphQL)
+│   ├── mangadex.js          # Volume list + covers (MangaDex)
+│   └── manga.js             # Combines both: series + its volumes
 ├── store/
 │   ├── index.js             # Vuex: state, getters, mutations, actions
 │   └── persist.js           # localStorage load/save plugin
@@ -67,23 +87,24 @@ src/
     ├── SearchView.vue       # /
     ├── LibraryView.vue      # /library
     ├── FavoritesView.vue    # /favorites
-    ├── MangaDetailView.vue  # /manga/:id
+    ├── SeriesView.vue       # /series/:id — all volumes of a series
+    ├── MangaDetailView.vue  # /manga/:id — one volume
     └── NotFoundView.vue
 ```
 
 ## Features
 
 ### Core
-- [x] Search manga via the Open Library API, results displayed dynamically
-- [x] Add to library, view collection, delete item
+- [x] Search manga series (AniList), one result per main series, volumes listed on the series page (MangaDex)
+- [x] Add to library (one volume, or every volume of a series at once), view collection, delete item
 - [x] Mark as read / to read
 - [x] Favorites (`favorite` property, `TOGGLE_FAVORITE` mutation, `favorites` getter, `/favorites` page)
 - [x] Vuex store with state, getters, mutations, actions
 - [x] Library saved to and loaded from localStorage
 
 ### Advanced (Part 6)
-- [x] Filters & sorting (status, favorites, title/year/date/rating, search inside library)
-- [x] Item details page (`/manga/:id` with route params)
+- [x] Filters & sorting (status, favorites, title/year/date/rating, search inside library; Vol. 2 sorts before Vol. 10)
+- [x] Series page (`/series/:id`) and volume details page (`/manga/:id`) with route params
 - [x] Rating system (1–5 stars, persisted)
 - [x] Personal notes (persisted)
 - [x] Library statistics
