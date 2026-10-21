@@ -2,7 +2,7 @@
 import { getPopularSeries, getSeriesInfo } from './anilist'
 import { getVolumeCovers } from './mangadex'
 
-export { searchSeries } from './anilist'
+export { searchSeries, getRandomTitle } from './anilist'
 
 // A volume id is "<AniList series id>-<volume number>", e.g. "30011-12"
 export const volumeId = (seriesId, volume) => `${seriesId}-${volume}`
@@ -69,27 +69,42 @@ export async function getVolume(id) {
 
 const shuffle = (list) => [...list].sort(() => Math.random() - 0.5)
 
-// Volumes that are not in the library yet:
-// first the next volume of the series you follow (most recently added first),
-// then Vol. 1 of popular series you don't have.
-export async function getSuggestions(library, count = 4) {
+// Series of the library, most recently added first (items saved before series existed have no seriesId)
+const followedSeries = (library) =>
+  [...new Set([...library].sort((a, b) => b.addedAt - a.addedAt).map((m) => m.seriesId))].filter(Boolean)
+
+const byVolumeNumber = (a, b) => parseFloat(a.volume) - parseFloat(b.volume)
+
+// "Continue reading": for each series you follow, the first volume you haven't read.
+// If you own an unread volume, it's that one (no request needed). Otherwise it's the next volume
+// you don't have yet, which needs the series' volume list.
+export async function getContinueReading(library, count = 10) {
   const owned = new Set(library.map((m) => m.id))
-  const followed = [...new Set([...library].sort((a, b) => b.addedAt - a.addedAt).map((m) => m.seriesId))]
-    .filter(Boolean) // items saved before the series pages existed have no seriesId
+  const results = []
+  for (const seriesId of followedSeries(library).slice(0, count)) {
+    const volumes = library.filter((m) => m.seriesId === seriesId).sort(byVolumeNumber)
+    const unread = volumes.find((v) => !v.read)
+    if (unread) {
+      results.push(unread)
+      continue
+    }
+    // One series at a time: MangaDex allows ~5 requests per second
+    try {
+      const series = await getSeries(seriesId)
+      const next = series.volumes.find((v) => !owned.has(v.id))
+      if (next) results.push(next)
+    } catch (err) {
+      console.warn('Could not load the next volume of', seriesId, err)
+    }
+  }
+  return results
+}
 
-  const nextVolumes = await Promise.all(
-    followed.slice(0, count).map((id) =>
-      getSeries(id)
-        .then((series) => series.volumes.find((v) => !owned.has(v.id)))
-        .catch(() => null)
-    )
-  )
-  const suggestions = nextVolumes.filter(Boolean)
-  if (suggestions.length >= count) return suggestions
-
+// "Suggested for you": Vol. 1 of popular series that are not in the library at all.
+export async function getSuggestedSeries(library, count = 10) {
+  const followed = new Set(followedSeries(library))
   const popular = await getPopularSeries()
-  const newSeries = shuffle(popular.filter((s) => !followed.includes(s.id)))
+  return shuffle(popular.filter((s) => !followed.has(s.id)))
+    .slice(0, count)
     .map((series) => toVolume(series, '1'))
-    .filter((v) => !owned.has(v.id))
-  return [...suggestions, ...newSeries].slice(0, count)
 }

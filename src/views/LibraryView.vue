@@ -55,6 +55,7 @@
           <RouterLink v-if="openSeries.seriesId" class="btn" :to="{ name: 'series', params: { id: openSeries.seriesId } }">
             All volumes of the series →
           </RouterLink>
+          <button class="btn" @click="removeSeries(openSeries)">Remove series</button>
         </div>
 
         <p v-if="!openSeriesVolumes.length" class="muted">No volume match these filters.</p>
@@ -82,6 +83,9 @@
             <RouterLink class="btn btn-primary" :to="seriesRoute(series)">
               {{ series.volumes.length }} volume{{ series.volumes.length > 1 ? 's' : '' }} →
             </RouterLink>
+            <button class="btn" :aria-label="`Remove ${series.title} from library`" @click="removeSeries(series)">
+              Remove
+            </button>
           </MangaCard>
         </div>
       </template>
@@ -101,7 +105,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import MangaCard from '@/components/MangaCard.vue'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
@@ -116,6 +120,7 @@ const VIEW_MODE_KEY = 'mangashelf:libraryView'
 
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
 const library = computed(() => store.getters.libraryItems)
 
 const filterText = ref('')
@@ -198,6 +203,16 @@ const seriesRoute = (series) =>
 
 // /library?series=<id> opens one series
 const openSeries = computed(() => allSeries.value.find((s) => s.id === route.query.series) ?? null)
+// TODO: replace window.confirm with a custom ConfirmDialog component (same as LibraryItemActions)
+function removeSeries(series) {
+  const count = series.volumes.length
+  if (!window.confirm(`Remove "${series.title}" (${count} volume${count > 1 ? 's' : ''}) from your library?`)) return
+  // Items saved before series existed have no seriesId: they are a single volume
+  if (series.seriesId) store.dispatch('removeSeriesFromLibrary', series)
+  else store.dispatch('removeFromLibrary', series.id)
+  if (route.query.series) router.replace({ name: 'library' })
+}
+
 const openSeriesVolumes = computed(() => openSeries.value?.volumes.filter(matchesFilters) ?? [])
 </script>
 

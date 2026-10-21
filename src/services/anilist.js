@@ -42,6 +42,17 @@ const POPULAR_QUERY = `
   }
 `
 
+// Titles only, for the search bar placeholder
+const TITLES_QUERY = `
+  query ($page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+      media(type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false, sort: [POPULARITY_DESC]) {
+        title { romaji english }
+      }
+    }
+  }
+`
+
 const SERIES_QUERY = `
   query ($id: Int) {
     Media(id: $id, type: MANGA) { ${SERIES_FIELDS} }
@@ -138,6 +149,15 @@ export async function searchSeries(query, page = 1) {
 export async function getPopularSeries(count = 40) {
   const data = await graphql(POPULAR_QUERY, { perPage: count })
   return data.Page.media.filter((m) => !hasMangaParent(m)).map(normalizeSeries)
+}
+
+// A random title among the 500 most popular manga ("e.g. Vinland Saga" in the search bar)
+export async function getRandomTitle() {
+  const PER_PAGE = 50
+  const page = 1 + Math.floor(Math.random() * 10)
+  const data = await graphql(TITLES_QUERY, { page, perPage: PER_PAGE })
+  const titles = data.Page.media.map((m) => m.title.english || m.title.romaji)
+  return titles[Math.floor(Math.random() * titles.length)]
 }
 
 export async function getSeriesInfo(id) {

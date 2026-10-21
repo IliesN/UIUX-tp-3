@@ -13,7 +13,7 @@
       >
         {{ item.favorite ? '❤️' : '🤍' }}
       </button>
-      <button class="btn" aria-label="Remove from library" @click="remove">🗑️</button>
+      <button class="btn" aria-label="Remove from library" @click="remove">Remove</button>
     </div>
   </div>
 </template>

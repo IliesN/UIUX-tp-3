@@ -16,7 +16,7 @@ import { ref, watch } from 'vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
-  placeholder: { type: String, default: 'Search a manga… (e.g. One Piece)' }
+  placeholder: { type: String, default: 'e.g. One Piece' }
 })
 const emit = defineEmits(['search'])
 

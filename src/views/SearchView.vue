@@ -1,10 +1,21 @@
 <template>
   <section>
     <h1 class="page-title">Find your next manga</h1>
-    <SearchBar :model-value="search.query" @search="onSearch" />
+    <SearchBar :model-value="search.query" :placeholder="placeholder" @search="onSearch" />
 
-    <!-- Home page (no search yet): volumes to add next -->
-    <SuggestedVolumes v-if="!search.query" />
+    <!-- Home page (no search yet) -->
+    <template v-if="!search.query">
+      <VolumeCarousel
+        title="Continue reading"
+        hint="The next volume to read in each of your series."
+        :fetch-volumes="getContinueReading"
+      />
+      <VolumeCarousel
+        title="Suggested for you"
+        hint="Popular series that are not in your library yet."
+        :fetch-volumes="getSuggestedSeries"
+      />
+    </template>
 
     <p v-if="search.error" class="error" role="alert">
       ⚠️ {{ search.error }}
@@ -38,14 +49,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useStore } from 'vuex'
 import SearchBar from '@/components/SearchBar.vue'
 import MangaCard from '@/components/MangaCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import SuggestedVolumes from '@/components/SuggestedVolumes.vue'
+import VolumeCarousel from '@/components/VolumeCarousel.vue'
+import { getContinueReading, getRandomTitle, getSuggestedSeries } from '@/services/manga'
 
 const store = useStore()
+
+// "e.g. <random manga title>", picked from the API on each visit
+const placeholder = ref('e.g. …')
+onMounted(async () => {
+  try {
+    placeholder.value = `e.g. ${await getRandomTitle()}`
+  } catch {
+    placeholder.value = 'e.g. One Piece' // API unreachable: a safe example
+  }
+})
 const search = computed(() => store.state.search)
 const seriesRoute = (series) => ({ name: 'series', params: { id: series.id } })
 

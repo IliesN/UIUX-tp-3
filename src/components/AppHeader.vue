@@ -7,32 +7,16 @@
         <RouterLink to="/library">Library ({{ libraryCount }})</RouterLink>
         <RouterLink to="/favorites">Favorites</RouterLink>
       </nav>
-      <button class="btn" :aria-label="`Switch to ${isDark ? 'light' : 'dark'} mode`" @click="toggleTheme">
-        {{ isDark ? '☀️' : '🌙' }}
-      </button>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed, ref, watchEffect } from 'vue'
+import { computed } from 'vue'
 import { useStore } from 'vuex'
 
 const store = useStore()
 const libraryCount = computed(() => store.getters.libraryItems.length)
-
-// Dark/light mode — preference kept in localStorage
-const THEME_KEY = 'mangashelf:theme'
-const isDark = ref(
-  localStorage.getItem(THEME_KEY)
-    ? localStorage.getItem(THEME_KEY) === 'dark'
-    : window.matchMedia('(prefers-color-scheme: dark)').matches
-)
-watchEffect(() => {
-  document.documentElement.dataset.theme = isDark.value ? 'dark' : 'light'
-  localStorage.setItem(THEME_KEY, isDark.value ? 'dark' : 'light')
-})
-const toggleTheme = () => (isDark.value = !isDark.value)
 </script>
 
 <style scoped>

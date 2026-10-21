@@ -17,7 +17,7 @@ Two free APIs, no API key required. Requests time out after 10 seconds with an e
 - `POST https://graphql.anilist.co` — `Page.media(search, type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false)`
   - `format: MANGA` + `countryOfOrigin: "JP"`: only Japanese manga (no novels, one-shots, manhwa, manhua, adult titles)
 - `POST https://graphql.anilist.co` — `Media(id)` for a series page
-- `POST https://graphql.anilist.co` — `Page.media(sort: POPULARITY_DESC)` for home page suggestions
+- `POST https://graphql.anilist.co` — `Page.media(sort: POPULARITY_DESC)` for home page suggestions, and a random title among the 500 most popular for the search bar placeholder
 
 Only **main series** are kept in search results ([src/services/anilist.js](src/services/anilist.js)). A result is removed when:
 
@@ -64,7 +64,7 @@ npm run preview
 src/
 ├── main.js                  # App entry: registers router + store
 ├── App.vue                  # Layout: header, <RouterView>, toasts
-├── assets/main.css          # Theme tokens (light/dark) + base styles
+├── assets/main.css          # Theme tokens + base styles (Yu Gothic font)
 ├── router/index.js          # Routes: /, /library, /favorites, /series/:id, /manga/:id
 ├── services/
 │   ├── http.js              # fetch + timeout + error messages
@@ -75,10 +75,10 @@ src/
 │   ├── index.js             # Vuex: state, getters, mutations, actions
 │   └── persist.js           # localStorage load/save plugin
 ├── components/
-│   ├── AppHeader.vue        # Nav + dark/light toggle
+│   ├── AppHeader.vue        # Logo + navigation
 │   ├── SearchBar.vue
 │   ├── MangaCard.vue        # Cover/title/author/year + action slot
-│   ├── SuggestedVolumes.vue # Home page: 4 volumes not in the library yet
+│   ├── VolumeCarousel.vue   # Sliding row of volumes (home page: Continue reading, Suggested for you)
 │   ├── CoverImage.vue       # Cover <img> with placeholder fallback
 │   ├── LibraryItemActions.vue  # Read, favorite, rating, delete
 │   ├── LibraryStats.vue
@@ -98,7 +98,7 @@ src/
 
 ### Core
 - [x] Search manga series (AniList), one result per main series, volumes listed on the series page (MangaDex)
-- [x] Add to library (one volume, or every volume of a series at once), view collection, delete item
+- [x] Add to library (one volume, or every volume of a series at once), view collection, delete item (one volume, or a whole series from My library)
 - [x] Library displayed **by series** (one card per series with a read progress bar, click to see its volumes) or **by volume** (Series / Volumes toggle, remembered on the browser)
 - [x] Mark as read / to read, one volume at a time or for a whole series at once ("I've read up to Vol. N" on the series page)
 - [x] Favorites (`favorite` property, `TOGGLE_FAVORITE` mutation, `favorites` getter, `/favorites` page)
@@ -111,9 +111,12 @@ src/
 - [x] Rating system (1–5 stars, persisted)
 - [x] Personal notes (persisted)
 - [x] Library statistics
-- [x] Home page suggestions: 4 volumes not in the library yet — the next volume of the series you follow first, then Vol. 1 of popular series
+- [x] Home page with two sliding rows (arrows or swipe):
+  - **Continue reading**: the next volume to read in each of your series (an unread volume you own, or the next one you don't have yet)
+  - **Suggested for you**: Vol. 1 of 10 popular series that are not in your library
+- [x] Search bar placeholder "e.g. <title>" with a random manga title from the API
 - [x] Better API experience (loading, error, no results, load more, no duplicates)
-- [x] UI/UX: responsive, dark/light mode, empty states, delete confirmation, toasts
+- [x] UI/UX: responsive, empty states, delete confirmation, toasts
 
 ## Team
 
