@@ -6,7 +6,10 @@
     <p v-else-if="error" class="muted" role="alert">⚠️ {{ error }}</p>
 
     <article v-else-if="manga" class="detail">
-      <CoverImage :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" />
+      <aside>
+        <CoverImage :src="manga.cover" :alt="`Cover of ${manga.title}`" class="cover" />
+        <PlatformLinks v-if="manga.series" :platforms="platforms" :loading="platformsLoading" />
+      </aside>
       <div class="info">
         <h1>{{ manga.title }}</h1>
         <p class="muted">{{ manga.author }} · {{ manga.year ?? '—' }}</p>
@@ -47,9 +50,10 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getVolume } from '@/services/manga'
+import { getVolume, getVolumePlatforms } from '@/services/manga'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
 import CoverImage from '@/components/CoverImage.vue'
+import PlatformLinks from '@/components/PlatformLinks.vue'
 
 // `id` comes from the route param /manga/:id, a volume id like "30011-12" (see router props)
 const props = defineProps({
@@ -64,6 +68,15 @@ const loading = ref(false)
 const error = ref(null)
 const libraryItem = computed(() => store.getters.getItemById(props.id))
 
+// Platforms are loaded after the volume, so the page shows up without waiting for MangaDex
+const platforms = ref([])
+const platformsLoading = ref(false)
+async function loadPlatforms(volume) {
+  platformsLoading.value = true
+  platforms.value = await getVolumePlatforms(volume.series, volume.volume)
+  platformsLoading.value = false
+}
+
 watch(
   () => props.id,
   async (id) => {
@@ -71,6 +84,7 @@ watch(
     error.value = null
     try {
       manga.value = await getVolume(id)
+      loadPlatforms(manga.value)
     } catch (err) {
       // Offline / API down: fall back to the copy saved in the library
       manga.value = store.getters.getItemById(id) ?? null
@@ -95,6 +109,9 @@ watch(
 @media (max-width: 640px) {
   .detail {
     grid-template-columns: 1fr;
+  }
+  aside {
+    max-width: 240px;
   }
   .cover {
     max-width: 200px;

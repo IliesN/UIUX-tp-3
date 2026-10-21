@@ -50,7 +50,12 @@
           <RouterLink class="btn" :to="{ name: 'library' }">← All series</RouterLink>
           <div class="series-name">
             <h2>{{ openSeries.title }}</h2>
-            <p class="muted">{{ openSeries.readCount }}/{{ openSeries.volumes.length }} read</p>
+            <SeriesProgress
+              class="series-progress"
+              :read="openSeries.readCount"
+              :owned="openSeries.ownedCount"
+              :total="openSeries.total"
+            />
           </div>
           <RouterLink v-if="openSeries.seriesId" class="btn" :to="{ name: 'series', params: { id: openSeries.seriesId } }">
             All volumes of the series →
@@ -71,17 +76,10 @@
         <p v-if="!visibleSeries.length" class="muted">No series match these filters.</p>
         <div class="grid">
           <MangaCard v-for="series in visibleSeries" :key="series.id" :manga="series" :to="seriesRoute(series)">
-            <div class="progress">
-              <span class="muted">
-                {{ series.readCount }}/{{ series.volumes.length }} read
-                <template v-if="series.favorite"> · ❤️</template>
-              </span>
-              <span class="bar" aria-hidden="true">
-                <span :style="{ width: `${(series.readCount / series.volumes.length) * 100}%` }" />
-              </span>
-            </div>
+            <SeriesProgress :read="series.readCount" :owned="series.ownedCount" :total="series.total" />
+            <span v-if="series.favorite" class="favorite" aria-label="Has favorite volumes">❤️</span>
             <RouterLink class="btn btn-primary" :to="seriesRoute(series)">
-              {{ series.volumes.length }} volume{{ series.volumes.length > 1 ? 's' : '' }} →
+              My volumes →
             </RouterLink>
             <button class="btn" :aria-label="`Remove ${series.title} from library`" @click="removeSeries(series)">
               Remove
@@ -104,13 +102,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import MangaCard from '@/components/MangaCard.vue'
 import LibraryItemActions from '@/components/LibraryItemActions.vue'
 import LibraryStats from '@/components/LibraryStats.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import SeriesProgress from '@/components/SeriesProgress.vue'
+import { isMainVolume, loadVolumeTotals } from '@/services/manga'
 
 const VIEW_MODES = [
   { value: 'series', label: 'Series' },
@@ -166,6 +166,17 @@ const matchesFilters = (m) => {
 
 const visibleItems = computed(() => library.value.filter(matchesFilters).sort(sorters[sortBy.value]))
 
+// Total number of volumes of each series (from the APIs, filled in as they arrive)
+const totals = ref({})
+watch(
+  () => [...new Set(library.value.map((m) => m.seriesId).filter(Boolean))].join(),
+  (ids) => {
+    if (!ids) return
+    loadVolumeTotals(ids.split(','), (id, total) => (totals.value = { ...totals.value, [id]: total }))
+  },
+  { immediate: true }
+)
+
 // Library volumes grouped by series. Items saved before series existed (no seriesId) are their own group.
 const allSeries = computed(() => {
   const groups = new Map()
@@ -177,15 +188,22 @@ const allSeries = computed(() => {
   return [...groups.entries()].map(([id, volumes]) => {
     volumes.sort(byVolume)
     const rated = volumes.filter((v) => v.rating > 0)
+    // Progress counts regular volumes only (not extras like "1.1"), see isMainVolume
+    const main = volumes.filter((v) => !v.seriesId || isMainVolume(v.volume))
+    const seriesId = volumes[0].seriesId ?? null
+    const total = seriesId ? totals.value[seriesId] : main.length
     return {
       id,
-      seriesId: volumes[0].seriesId ?? null,
+      seriesId,
       title: volumes[0].seriesTitle ?? volumes[0].title,
       author: volumes[0].author,
       year: volumes[0].year,
       cover: volumes[0].cover,
       volumes,
-      readCount: volumes.filter((v) => v.read).length,
+      readCount: main.filter((v) => v.read).length,
+      ownedCount: main.length,
+      // Never less than what you own (the API can be behind on a running series)
+      total: total ? Math.max(total, main.length) : null,
       favorite: volumes.some((v) => v.favorite),
       addedAt: Math.max(...volumes.map((v) => v.addedAt)),
       rating: rated.length ? rated.reduce((sum, v) => sum + v.rating, 0) / rated.length : 0
@@ -261,22 +279,11 @@ const openSeriesVolumes = computed(() => openSeries.value?.volumes.filter(matche
 .series-name p {
   margin: 0;
 }
-.progress {
-  width: 100%;
+.series-progress {
+  max-width: 260px;
+}
+.favorite {
   font-size: 0.8rem;
-}
-.bar {
-  display: block;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-  margin-top: 4px;
-}
-.bar span {
-  display: block;
-  height: 100%;
-  background: var(--success);
 }
 .grid .btn,
 .series-bar .btn {

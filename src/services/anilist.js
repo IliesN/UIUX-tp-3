@@ -53,9 +53,21 @@ const TITLES_QUERY = `
   }
 `
 
+// Volume count of several series at once (library progress bars)
+const COUNTS_QUERY = `
+  query ($ids: [Int], $perPage: Int) {
+    Page(perPage: $perPage) {
+      media(id_in: $ids, type: MANGA) { id volumes status }
+    }
+  }
+`
+
 const SERIES_QUERY = `
   query ($id: Int) {
-    Media(id: $id, type: MANGA) { ${SERIES_FIELDS} }
+    Media(id: $id, type: MANGA) {
+      ${SERIES_FIELDS}
+      externalLinks { site url type language icon color isDisabled }
+    }
   }
 `
 
@@ -119,6 +131,43 @@ function isMainSeries(media, all) {
   )
 }
 
+const LANGUAGE_CODES = {
+  English: 'EN',
+  French: 'FR',
+  Japanese: 'JP',
+  Spanish: 'ES',
+  German: 'DE',
+  Italian: 'IT',
+  Portuguese: 'PT',
+  Korean: 'KR',
+  Chinese: 'CN',
+  Thai: 'TH',
+  Indonesian: 'ID',
+  Vietnamese: 'VN'
+}
+// Which link to open when a platform has one per language
+const PREFERRED_LANGUAGES = ['French', 'English']
+
+// Official platforms where the series can be read (AniList "STREAMING" links), one entry per site:
+// { site, url, icon, color, languages: ['EN', 'FR'] }
+function platformsOf(media) {
+  const bySite = new Map()
+  for (const link of media.externalLinks ?? []) {
+    if (link.type !== 'STREAMING' || link.isDisabled) continue
+    if (!bySite.has(link.site)) bySite.set(link.site, [])
+    bySite.get(link.site).push(link)
+  }
+  return [...bySite.entries()].map(([site, links]) => {
+    const rank = (l) => {
+      const i = PREFERRED_LANGUAGES.indexOf(l.language)
+      return i === -1 ? PREFERRED_LANGUAGES.length : i
+    }
+    const main = [...links].sort((a, b) => rank(a) - rank(b))[0]
+    const languages = [...new Set(links.map((l) => LANGUAGE_CODES[l.language] ?? l.language).filter(Boolean))]
+    return { site, url: main.url, icon: links.find((l) => l.icon)?.icon ?? '', color: main.color ?? null, languages }
+  })
+}
+
 // Normalize an AniList media into the shape the app uses for a series.
 export function normalizeSeries(media) {
   return {
@@ -132,7 +181,8 @@ export function normalizeSeries(media) {
     status: media.status, // FINISHED, RELEASING, HIATUS…
     score: media.averageScore ? (media.averageScore / 10).toFixed(1) : null,
     genres: media.genres ?? [],
-    synopsis: cleanDescription(media.description)
+    synopsis: cleanDescription(media.description),
+    platforms: platformsOf(media) // only filled on a series page (Media query)
   }
 }
 
@@ -158,6 +208,20 @@ export async function getRandomTitle() {
   const data = await graphql(TITLES_QUERY, { page, perPage: PER_PAGE })
   const titles = data.Page.media.map((m) => m.title.english || m.title.romaji)
   return titles[Math.floor(Math.random() * titles.length)]
+}
+
+// Map seriesId -> { volumes, finished }. A running series' count is often missing or outdated.
+export async function getVolumeCounts(ids) {
+  const counts = new Map()
+  const PER_PAGE = 50 // AniList maximum
+  for (let i = 0; i < ids.length; i += PER_PAGE) {
+    const chunk = ids.slice(i, i + PER_PAGE)
+    const data = await graphql(COUNTS_QUERY, { ids: chunk.map(Number), perPage: PER_PAGE })
+    for (const m of data.Page.media) {
+      counts.set(String(m.id), { volumes: m.volumes, finished: m.status === 'FINISHED' })
+    }
+  }
+  return counts
 }
 
 export async function getSeriesInfo(id) {
