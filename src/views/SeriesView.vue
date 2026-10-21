@@ -34,6 +34,14 @@
               {{ ownedCount }} in your library
             </span>
           </div>
+          <!-- Set reading progress in one go instead of marking each volume as read -->
+          <label v-if="series.volumes.length" class="progress">
+            <span>I've read up to</span>
+            <select class="input" :value="readUpTo" @change="setReadUpTo($event.target.value)">
+              <option value="">Not started</option>
+              <option v-for="v in series.volumes" :key="v.id" :value="v.volume">Vol. {{ v.volume }}</option>
+            </select>
+          </label>
         </div>
       </header>
 
@@ -51,7 +59,7 @@
             :disabled="isInLibrary(volume.id)"
             @click="store.dispatch('addToLibrary', volume)"
           >
-            {{ isInLibrary(volume.id) ? '✓ In library' : '+ Add' }}
+            {{ isRead(volume.id) ? '✅ Read' : isInLibrary(volume.id) ? '✓ In library' : '+ Add' }}
           </button>
         </MangaCard>
       </div>
@@ -88,6 +96,15 @@ const series = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const isInLibrary = (id) => store.getters.isInLibrary(id)
+const isRead = (id) => store.getters.getItemById(id)?.read ?? false
+// Current progress: the last volume of the unbroken run of read volumes from Vol. 1
+const readUpTo = computed(() => {
+  const volumes = series.value?.volumes ?? []
+  const firstUnread = volumes.findIndex((v) => !isRead(v.id))
+  const last = firstUnread === -1 ? volumes.at(-1) : volumes[firstUnread - 1]
+  return last?.volume ?? ''
+})
+const setReadUpTo = (upTo) => store.dispatch('markReadUpTo', { ...series.value, upTo })
 const ownedCount = computed(() => series.value?.volumes.filter((v) => isInLibrary(v.id)).length ?? 0)
 
 async function load() {
@@ -157,6 +174,15 @@ watch(() => props.id, load, { immediate: true })
   align-items: center;
   gap: 12px;
   margin-top: 12px;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.progress select {
+  width: auto;
 }
 .error {
   color: var(--accent);

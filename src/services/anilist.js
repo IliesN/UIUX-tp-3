@@ -32,6 +32,16 @@ const SEARCH_QUERY = `
   }
 `
 
+const POPULAR_QUERY = `
+  query ($perPage: Int) {
+    Page(perPage: $perPage) {
+      media(type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false, sort: [POPULARITY_DESC]) {
+        ${SERIES_FIELDS}
+      }
+    }
+  }
+`
+
 const SERIES_QUERY = `
   query ($id: Int) {
     Media(id: $id, type: MANGA) { ${SERIES_FIELDS} }
@@ -122,6 +132,12 @@ export async function searchSeries(query, page = 1) {
     results: media.filter((m) => isMainSeries(m, media)).map(normalizeSeries),
     hasNextPage: data.Page.pageInfo.hasNextPage
   }
+}
+
+// The most popular main series, used for suggestions
+export async function getPopularSeries(count = 40) {
+  const data = await graphql(POPULAR_QUERY, { perPage: count })
+  return data.Page.media.filter((m) => !hasMangaParent(m)).map(normalizeSeries)
 }
 
 export async function getSeriesInfo(id) {

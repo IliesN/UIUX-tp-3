@@ -64,6 +64,10 @@ export default createStore({
       const item = findItem(state, id)
       if (item) item.read = !item.read
     },
+    SET_READ(state, { id, read }) {
+      const item = findItem(state, id)
+      if (item) item.read = read
+    },
     TOGGLE_FAVORITE(state, id) {
       const item = findItem(state, id)
       if (item) item.favorite = !item.favorite
@@ -146,6 +150,19 @@ export default createStore({
       dispatch('notify', {
         message: missing.length ? `Added ${missing.length} volume(s) of "${title}"` : `All of "${title}" is already in your library`,
         type: missing.length ? 'success' : 'info'
+      })
+    },
+    // "I've read up to volume N": volumes 1..N are read (added to the library if needed),
+    // the following ones already in the library go back to "to read".
+    markReadUpTo({ commit, getters, dispatch }, { title, volumes, upTo }) {
+      const index = volumes.findIndex((v) => v.volume === upTo)
+      volumes.forEach((v, i) => {
+        const read = i <= index
+        if (read && !getters.isInLibrary(v.id)) commit('ADD_ITEM', v)
+        commit('SET_READ', { id: v.id, read })
+      })
+      dispatch('notify', {
+        message: index < 0 ? `"${title}" marked as not started` : `"${title}" read up to Vol. ${upTo}`
       })
     },
     removeFromLibrary({ commit, getters, dispatch }, id) {
