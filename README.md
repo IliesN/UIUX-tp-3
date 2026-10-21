@@ -17,6 +17,7 @@ Two free APIs, no API key required. Requests time out after 10 seconds with an e
 - `POST https://graphql.anilist.co` — `Page.media(search, type: MANGA, format: MANGA, countryOfOrigin: "JP", isAdult: false)`
   - `format: MANGA` + `countryOfOrigin: "JP"`: only Japanese manga (no novels, one-shots, manhwa, manhua, adult titles)
 - `POST https://graphql.anilist.co` — `Media(id)` for a series page
+- `POST https://graphql.anilist.co` — `Page.media(sort: POPULARITY_DESC)` for home page suggestions
 
 Only **main series** are kept in search results ([src/services/anilist.js](src/services/anilist.js)). A result is removed when:
 
@@ -77,6 +78,7 @@ src/
 │   ├── AppHeader.vue        # Nav + dark/light toggle
 │   ├── SearchBar.vue
 │   ├── MangaCard.vue        # Cover/title/author/year + action slot
+│   ├── SuggestedVolumes.vue # Home page: 4 volumes not in the library yet
 │   ├── CoverImage.vue       # Cover <img> with placeholder fallback
 │   ├── LibraryItemActions.vue  # Read, favorite, rating, delete
 │   ├── LibraryStats.vue
@@ -84,8 +86,8 @@ src/
 │   ├── EmptyState.vue
 │   └── ToastContainer.vue
 └── views/
-    ├── SearchView.vue       # /
-    ├── LibraryView.vue      # /library
+    ├── SearchView.vue       # / — search + suggestions
+    ├── LibraryView.vue      # /library — by series or by volume; /library?series=<id> opens one series
     ├── FavoritesView.vue    # /favorites
     ├── SeriesView.vue       # /series/:id — all volumes of a series
     ├── MangaDetailView.vue  # /manga/:id — one volume
@@ -97,17 +99,19 @@ src/
 ### Core
 - [x] Search manga series (AniList), one result per main series, volumes listed on the series page (MangaDex)
 - [x] Add to library (one volume, or every volume of a series at once), view collection, delete item
-- [x] Mark as read / to read
+- [x] Library displayed **by series** (one card per series with a read progress bar, click to see its volumes) or **by volume** (Series / Volumes toggle, remembered on the browser)
+- [x] Mark as read / to read, one volume at a time or for a whole series at once ("I've read up to Vol. N" on the series page)
 - [x] Favorites (`favorite` property, `TOGGLE_FAVORITE` mutation, `favorites` getter, `/favorites` page)
 - [x] Vuex store with state, getters, mutations, actions
 - [x] Library saved to and loaded from localStorage
 
 ### Advanced (Part 6)
-- [x] Filters & sorting (status, favorites, title/year/date/rating, search inside library; Vol. 2 sorts before Vol. 10)
+- [x] Filters & sorting (status, favorites, title/year/date/rating, search inside library; Vol. 2 sorts before Vol. 10; "Series" sort in the volume view groups volumes by series, in reading order)
 - [x] Series page (`/series/:id`) and volume details page (`/manga/:id`) with route params
 - [x] Rating system (1–5 stars, persisted)
 - [x] Personal notes (persisted)
 - [x] Library statistics
+- [x] Home page suggestions: 4 volumes not in the library yet — the next volume of the series you follow first, then Vol. 1 of popular series
 - [x] Better API experience (loading, error, no results, load more, no duplicates)
 - [x] UI/UX: responsive, dark/light mode, empty states, delete confirmation, toasts
 

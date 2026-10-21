@@ -3,6 +3,9 @@
     <h1 class="page-title">Find your next manga</h1>
     <SearchBar :model-value="search.query" @search="onSearch" />
 
+    <!-- Home page (no search yet): volumes to add next -->
+    <SuggestedVolumes v-if="!search.query" />
+
     <p v-if="search.error" class="error" role="alert">
       ⚠️ {{ search.error }}
       <button class="btn" @click="retry">Retry</button>
@@ -40,6 +43,7 @@ import { useStore } from 'vuex'
 import SearchBar from '@/components/SearchBar.vue'
 import MangaCard from '@/components/MangaCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import SuggestedVolumes from '@/components/SuggestedVolumes.vue'
 
 const store = useStore()
 const search = computed(() => store.state.search)
